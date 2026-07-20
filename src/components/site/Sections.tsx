@@ -21,6 +21,7 @@ import {
   Clock,
   Star,
   Quote,
+  X,
 } from "lucide-react";
 import { Reveal, Counter } from "./Reveal";
 import { WHATSAPP, CONTACT_EMAIL, FACEBOOK_URL, INSTAGRAM_URL } from "./Floating";
@@ -868,50 +869,53 @@ export function Testimonials({ items = SITE_CONFIG.testimonials }: { items?: Tes
 export function Reviews({ googleReviews = [] }: { settings?: SiteSettings; googleReviews?: GoogleReview[] }) {
   const GAP = 16;
 
-  // Use googleReviews if available, otherwise fall back to mock reviews
+  // Use googleReviews if available, otherwise fall back to detailed mock reviews
   const mockReviews: GoogleReview[] = [
     {
       author: "Alex P.",
       timeDescription: "A month ago",
       rating: 5,
-      text: "Best PT in Christchurch. Tailored, professional, results-driven.",
+      text: "Best PT in Christchurch. Tailored, professional, results-driven. Ranjit took the time to understand my specific goals and recovery needs, crafting a program that fit around my busy schedule. After 3 months of consistent training, my strength has doubled, my mobility is back, and I feel more energized every day. Highly recommended to anyone looking for real, long-lasting fitness transformation!",
     },
     {
       author: "Mia L.",
       timeDescription: "2 weeks ago",
       rating: 5,
-      text: "Patient with beginners. Ranjit makes the gym feel approachable.",
+      text: "Patient with beginners. Ranjit makes the gym feel approachable. I used to be terrified of entering the free weights section, but with his guidance, proper form cues, and encouraging coaching style, I gained total confidence. The weekly check-ins and nutrition advice made a massive difference to my energy levels.",
     },
     {
       author: "David T.",
       timeDescription: "3 months ago",
       rating: 5,
-      text: "Online coaching is on point. Worth every cent.",
+      text: "Online coaching is on point. Worth every cent. The customized mobile app tracking, detailed exercise video breakdowns, and fast WhatsApp response times meant I never felt lost during my workouts. If you want structured training with genuine accountability, Ranjit is the coach to go to.",
     },
     {
       author: "Emma S.",
       timeDescription: "5 months ago",
       rating: 5,
-      text: "Honest, knowledgeable, and genuinely invested in your progress.",
+      text: "Honest, knowledgeable, and genuinely invested in your progress. No BS routines or extreme diets — just real science-backed training and sustainable habits. I've lost 8kg while building lean muscle and improving my overall health.",
     },
   ];
 
   const activeReviews = googleReviews && googleReviews.length > 0 ? googleReviews : mockReviews;
 
-  // Carousel slider state
+  // Carousel slider state & expansion states
   const [currentPage, setCurrentPage] = useState(0);
   const [paused, setPaused] = useState(false);
+  const [expandedCards, setExpandedCards] = useState<Record<number, boolean>>({});
+  const [selectedReviewModal, setSelectedReviewModal] = useState<GoogleReview | null>(null);
+
   const total = activeReviews.length;
   const totalPages = total;
 
-  // Auto-advance reviews page every 4.5 seconds
+  // Auto-advance reviews page every 4.5 seconds (paused if interacting or modal open)
   useEffect(() => {
-    if (paused || totalPages <= 1) return;
+    if (paused || selectedReviewModal || totalPages <= 1) return;
     const id = setInterval(() => {
       setCurrentPage((prev) => (prev + 1) % totalPages);
     }, 4500);
     return () => clearInterval(id);
-  }, [paused, totalPages]);
+  }, [paused, selectedReviewModal, totalPages]);
 
   const prevPage = () => setCurrentPage((p) => (p - 1 + totalPages) % totalPages);
   const nextPage = () => setCurrentPage((p) => (p + 1) % totalPages);
@@ -919,9 +923,11 @@ export function Reviews({ googleReviews = [] }: { settings?: SiteSettings; googl
   return (
     <section 
       id="reviews" 
-      className="py-24 md:py-36 overflow-hidden"
+      className="py-24 md:py-36 overflow-hidden relative"
       onMouseEnter={() => setPaused(true)}
-      onMouseLeave={() => setPaused(false)}
+      onMouseLeave={() => {
+        if (!selectedReviewModal) setPaused(false);
+      }}
       onFocus={() => setPaused(true)}
       onBlur={() => setPaused(false)}
     >
@@ -965,69 +971,92 @@ export function Reviews({ googleReviews = [] }: { settings?: SiteSettings; googl
             <div className="relative overflow-hidden px-4">
               <div className="overflow-hidden">
                 <motion.div
-                  className="flex w-full [--translate-amount:calc(100%+16px)] sm:[--translate-amount:calc(50%+8px)]"
+                  className="flex w-full [--translate-amount:calc(100%+16px)] sm:[--translate-amount:calc(50%+8px)] items-start"
                   animate={{ x: `calc(-${currentPage} * var(--translate-amount))` }}
                   transition={{ duration: 0.85, ease: [0.16, 1, 0.3, 1] }}
                   style={{ gap: GAP }}
                 >
-                  {activeReviews.map((r, k) => (
-                    <div
-                      key={k}
-                      className="bg-[#181818] p-5 flex flex-col justify-between shrink-0 border border-white/5 rounded-2xl hover:border-gold/30 transition-colors duration-300 relative w-full min-w-full sm:w-[calc((100%-16px)/2)] sm:min-w-[calc((100%-16px)/2)]"
-                      style={{
-                        minHeight: 200,
-                      }}
-                    >
-                      <div>
-                        {/* Google G icon in top right */}
-                        <div className="absolute top-5 right-5">
-                          <svg viewBox="0 0 24 24" className="w-4 h-4">
-                            <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" />
-                            <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" />
-                            <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z" />
-                            <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z" />
-                          </svg>
-                        </div>
+                  {activeReviews.map((r, k) => {
+                    const isExpanded = !!expandedCards[k];
+                    const isLongText = r.text && r.text.length > 120;
 
-                        <div className="flex items-center gap-2.5 mb-3.5">
-                          {r.avatar ? (
-                            <img src={r.avatar} alt={r.author} className="w-8 h-8 rounded-full object-cover" />
-                          ) : (
-                            <div className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center text-[10px] font-bold text-gold uppercase">
-                              {r.author ? r.author[0] : "A"}
+                    return (
+                      <div
+                        key={k}
+                        onClick={() => {
+                          setPaused(true);
+                          setSelectedReviewModal(r);
+                        }}
+                        className="bg-[#181818] p-5 flex flex-col justify-between shrink-0 border border-white/5 rounded-2xl hover:border-gold/30 transition-all duration-300 relative w-full min-w-full sm:w-[calc((100%-16px)/2)] sm:min-w-[calc((100%-16px)/2)] cursor-pointer group"
+                        style={{
+                          minHeight: 200,
+                        }}
+                      >
+                        <div>
+                          {/* Google G icon in top right */}
+                          <div className="absolute top-5 right-5 opacity-80 group-hover:opacity-100 transition-opacity">
+                            <svg viewBox="0 0 24 24" className="w-4 h-4">
+                              <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" />
+                              <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" />
+                              <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z" />
+                              <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z" />
+                            </svg>
+                          </div>
+
+                          <div className="flex items-center gap-2.5 mb-3.5">
+                            {r.avatar ? (
+                              <img src={r.avatar} alt={r.author} className="w-8 h-8 rounded-full object-cover" />
+                            ) : (
+                              <div className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center text-[10px] font-bold text-gold uppercase">
+                                {r.author ? r.author[0] : "A"}
+                              </div>
+                            )}
+                            <div>
+                              <div className="text-[13.5px] font-bold text-white leading-none">{r.author}</div>
+                              <div className="text-[9.5px] text-muted-foreground mt-1">{r.timeDescription || "1 month ago"}</div>
+                            </div>
+                          </div>
+
+                          <div className="flex items-center gap-1.5 mb-2.5">
+                            <div className="flex gap-0.5">
+                              {Array.from({ length: r.rating || 5 }).map((_, i) => (
+                                <Star key={i} className="w-3 h-3 fill-gold text-gold" />
+                              ))}
+                            </div>
+                            {/* Blue Verified Badge */}
+                            <span className="inline-flex items-center justify-center w-3.5 h-3.5 rounded-full bg-[#4285F4] text-white shrink-0">
+                              <svg className="w-2 h-2 fill-current" viewBox="0 0 20 20">
+                                <path d="M0 11l2-2 5 5L18 3l2 2L7 18z" />
+                              </svg>
+                            </span>
+                          </div>
+
+                          <p className={`text-[13px] text-foreground/80 leading-relaxed font-normal ${isExpanded ? 'line-clamp-none' : 'line-clamp-4'}`}>
+                            "{r.text}"
+                          </p>
+
+                          {isLongText && (
+                            <div className="mt-2.5 flex items-center justify-between">
+                              <button
+                                type="button"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setPaused(true);
+                                  setExpandedCards((prev) => ({ ...prev, [k]: !prev[k] }));
+                                }}
+                                className="text-[11px] text-gold font-semibold hover:underline cursor-pointer transition-colors"
+                              >
+                                {isExpanded ? "Read less" : "Read more"}
+                              </button>
+                              <span className="text-[10px] text-muted-foreground group-hover:text-white/70 transition-colors">
+                                Click card for full view ↗
+                              </span>
                             </div>
                           )}
-                          <div>
-                            <div className="text-[13.5px] font-bold text-white leading-none">{r.author}</div>
-                            <div className="text-[9.5px] text-muted-foreground mt-1">{r.timeDescription || "1 month ago"}</div>
-                          </div>
                         </div>
-
-                        <div className="flex items-center gap-1.5 mb-2.5">
-                          <div className="flex gap-0.5">
-                            {Array.from({ length: r.rating }).map((_, i) => (
-                              <Star key={i} className="w-3 h-3 fill-gold text-gold" />
-                            ))}
-                          </div>
-                          {/* Blue Verified Badge */}
-                          <span className="inline-flex items-center justify-center w-3.5 h-3.5 rounded-full bg-[#4285F4] text-white shrink-0">
-                            <svg className="w-2 h-2 fill-current" viewBox="0 0 20 20">
-                              <path d="M0 11l2-2 5 5L18 3l2 2L7 18z" />
-                            </svg>
-                          </span>
-                        </div>
-
-                        <p className="text-[13px] text-foreground/80 leading-relaxed font-normal line-clamp-4">
-                          "{r.text}"
-                        </p>
-                        {r.text && r.text.length > 120 && (
-                          <span className="text-[11px] text-muted-foreground mt-1.5 block cursor-pointer hover:text-white transition-colors">
-                            Read more
-                          </span>
-                        )}
                       </div>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </motion.div>
               </div>
 
@@ -1070,6 +1099,88 @@ export function Reviews({ googleReviews = [] }: { settings?: SiteSettings; googl
           </div>
         </div>
       </div>
+
+      {/* Full Review Modal Popup */}
+      <AnimatePresence>
+        {selectedReviewModal && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm"
+            onClick={() => setSelectedReviewModal(null)}
+          >
+            <motion.div
+              initial={{ scale: 0.95, opacity: 0, y: 20 }}
+              animate={{ scale: 1, opacity: 1, y: 0 }}
+              exit={{ scale: 0.95, opacity: 0, y: 20 }}
+              transition={{ type: "spring", damping: 25, stiffness: 300 }}
+              className="bg-[#1c1c1c] border border-white/10 p-6 md:p-8 rounded-2xl max-w-lg w-full relative shadow-2xl overflow-hidden"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <button
+                onClick={() => setSelectedReviewModal(null)}
+                aria-label="Close modal"
+                className="absolute top-4 right-4 p-2 text-foreground/60 hover:text-white rounded-full bg-white/5 hover:bg-white/10 transition-colors"
+              >
+                <X className="w-5 h-5" />
+              </button>
+
+              <div className="flex items-center gap-3 mb-4">
+                {selectedReviewModal.avatar ? (
+                  <img src={selectedReviewModal.avatar} alt={selectedReviewModal.author} className="w-12 h-12 rounded-full object-cover" />
+                ) : (
+                  <div className="w-12 h-12 rounded-full bg-gold/10 border border-gold/20 flex items-center justify-center text-sm font-bold text-gold uppercase">
+                    {selectedReviewModal.author ? selectedReviewModal.author[0] : "A"}
+                  </div>
+                )}
+                <div>
+                  <div className="text-base font-bold text-white flex items-center gap-2">
+                    {selectedReviewModal.author}
+                    <span className="inline-flex items-center justify-center w-4 h-4 rounded-full bg-[#4285F4] text-white shrink-0">
+                      <svg className="w-2.5 h-2.5 fill-current" viewBox="0 0 20 20">
+                        <path d="M0 11l2-2 5 5L18 3l2 2L7 18z" />
+                      </svg>
+                    </span>
+                  </div>
+                  <div className="text-xs text-muted-foreground mt-0.5">{selectedReviewModal.timeDescription || "Verified Google Review"}</div>
+                </div>
+              </div>
+
+              <div className="flex gap-1 mb-4">
+                {Array.from({ length: selectedReviewModal.rating || 5 }).map((_, i) => (
+                  <Star key={i} className="w-4 h-4 fill-gold text-gold" />
+                ))}
+              </div>
+
+              <div className="max-h-[60vh] overflow-y-auto pr-2 custom-scrollbar">
+                <p className="text-foreground/90 text-sm leading-relaxed whitespace-pre-line font-normal">
+                  "{selectedReviewModal.text}"
+                </p>
+              </div>
+
+              <div className="mt-6 pt-4 border-t border-white/5 flex justify-between items-center text-xs text-muted-foreground">
+                <span className="flex items-center gap-1.5">
+                  <svg viewBox="0 0 24 24" className="w-4 h-4">
+                    <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" />
+                    <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" />
+                    <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z" />
+                    <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z" />
+                  </svg>
+                  Verified Google Review
+                </span>
+                <button
+                  type="button"
+                  onClick={() => setSelectedReviewModal(null)}
+                  className="px-4 py-1.5 rounded-full bg-gold/10 hover:bg-gold/20 text-gold font-semibold text-xs transition-colors"
+                >
+                  Close
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </section>
   );
 }
