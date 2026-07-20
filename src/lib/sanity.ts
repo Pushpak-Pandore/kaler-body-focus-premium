@@ -52,7 +52,7 @@ export interface ServiceItem {
 // Google Review interface
 export interface GoogleReview {
   author: string;
-  avatar: string;
+  avatar?: string;
   rating: number;
   timeDescription: string;
   text: string;
